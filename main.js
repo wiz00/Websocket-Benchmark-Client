@@ -207,6 +207,16 @@ class Benchmarker {
 
         // once all round have been completed, close the websocket connections
         await this.cm.close();
+
+        // now we have to wait all connections to be closed
+        return new Promise((resolve, reject) => {
+            let timer = setInterval(() => {
+                if (this.connection_progress_obj.counter == 0) {
+                    clearInterval(timer);
+                    resolve();
+                }
+            }, 10)
+        });
     }
 
     /**
