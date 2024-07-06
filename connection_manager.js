@@ -120,7 +120,7 @@ module.exports = class ConnectionManager {
      * @param round {number} The current round being ran in the benchmarking process
      * @returns {Promise} resolves when all requests have been completed/timeout
      */
-     sendRequests(round) {
+    sendRequests(round) {
          // clear the times array which contains the previous rounds data
         this.connection_obj.times = new Array(this.benchmark_obj.connection_interval * (round + 1));
 

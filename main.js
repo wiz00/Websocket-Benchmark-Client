@@ -133,6 +133,11 @@ class Benchmarker {
          */
         this.TEST_REPETITIONS = process.env.TEST_REPETITIONS || 1;
 
+        /**
+         * Current repetition
+         * @type {number}
+         */
+        this.repetition = 1;
     }
 
     /**
@@ -162,12 +167,11 @@ class Benchmarker {
             // close the readline interface
             rl.close();
 
-            let maxRuns = self.TEST_REPETITIONS
-            for (let run = 1; run <= maxRuns; run++) {
-                console.log(`Repetition ${run}/${maxRuns}`)
+            for (self.repetition = 1; self.repetition <= self.TEST_REPETITIONS; self.repetition++) {
+                console.log(`Repetition ${self.repetition}/${self.TEST_REPETITIONS}`)
 
                 // create the file where the benchmark results will be saved to
-                await self.fm.createFile(run);
+                await self.fm.createFile(self.repetition);
 
                 // benchmark the rest of the program
                 await self.run_program();
@@ -200,7 +204,7 @@ class Benchmarker {
         // for the number of given rounds, perform the benchmarking process, waiting for each round to finish before
         // continuing
         for (let i = 0; i < this.ROUNDS; i++) {
-            console.log(`Round ${i + 1}/${this.ROUNDS}`)
+            console.log(`Run ${this.repetition}/${this.TEST_REPETITIONS} | Round ${i + 1}/${this.ROUNDS}`)
 
             await this.benchmark(i);
         }

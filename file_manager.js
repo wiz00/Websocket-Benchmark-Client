@@ -143,6 +143,8 @@ module.exports = class FileManager {
                     fs.writeFile(filename, fields + csv, function (err) {
                         if (err) throw reject();
 
+                        console.log('File created: ' + filename);
+
                         resolve();
                     });
                 }
