@@ -1,1 +1,6 @@
+Dockerfile*
 benchmarks
+.git*
+.dockerignore
+node_modules
+yarn.lock
