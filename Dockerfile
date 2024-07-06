@@ -10,6 +10,4 @@ ADD . ./
 
 RUN yarn install
 
-RUN ulimit -HSn 1024000
-
 CMD ["node", "main.js"]
