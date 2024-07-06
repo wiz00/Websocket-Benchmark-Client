@@ -38,7 +38,7 @@ module.exports = class Results {
      * }
      * @returns void
      */
-    calculate(stats) {
+    async calculate(stats) {
 
         // the number of clients connected
         let client_length = stats.clients.length;
@@ -49,9 +49,9 @@ module.exports = class Results {
         // the total time it took for all the clients to connect each round
         let connection_time = stats.connection_time;
 
-        // set default values for the start and stop times of the request process
+        // set default values for the start (as future) and stop times (as zero) of the request process
         // these will be used to calculate the total elapsed time to complete the requests
-        let start_time = Math.floor(new Date(8640000000000000) / 1000);
+        let start_time = Math.floor(+(new Date()) + 1000);
         let stop_time = 0;
 
         // set defaults for the the statistics on round trip times for requests
@@ -103,14 +103,15 @@ module.exports = class Results {
         });
 
         // calculate the average round trip time
-        let average_rt = total_rt / count;
+        let average_rt = Math.round(total_rt / count*10)/10;
 
         // calculate the total time for the round
         let time_elapse = stop_time - start_time;
 
         // output statistics to console
-        console.log("Count: " + count + "/" + (this.request_interval * client_length) + " (" + count / (this.request_interval * client_length) * 100 + "%) " + " | Time Elapse: " + time_elapse);
-        console.log("Longest Trip: " + longest_rt + " | Shortest Trip: " + shortest_rt + " | Average Trip: " + average_rt);
+        console.log("Clients: " + client_length + " | Messages: " + count + "/" + (this.request_interval * client_length) + " (" + count / (this.request_interval * client_length) * 100 + "%) | Time Elapse: " + time_elapse + " ms");
+        console.log("Longest Trip: " + longest_rt + " ms | Shortest Trip: " + shortest_rt + " ms | Average Trip: " + average_rt + " ms");
+        console.log("");
 
         let data = {
             "clients": client_length,
@@ -125,10 +126,6 @@ module.exports = class Results {
         };
 
         // send data to the FileManager to be saved
-        this.file_manager.saveDataToFile(data).then(() => {
-            return new Promise((resolve, reject) => {
-                resolve();
-            });
-        });
+        await this.file_manager.saveDataToFile(data)
     }
 };

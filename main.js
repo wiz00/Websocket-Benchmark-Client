@@ -112,6 +112,9 @@ class Benchmarker {
          */
         this.result = null;
 
+        this.connection_bar = null;
+        this.benchmark_bar = null;
+
         /**
          * Instance of the ConnectionManager class
          * @type {module.ConnectionManager}
@@ -124,13 +127,19 @@ class Benchmarker {
          */
         this.ROUNDS = process.env.ROUNDS || 25;
 
+        /**
+         * The number of repetitions of the benchmark (starting with 0 connections each time)
+         * @type {number}
+         */
+        this.TEST_REPETITIONS = process.env.TEST_REPETITIONS || 1;
+
     }
 
     /**
      * Prompts the user at the beginning of the application for the current language being benchmarked
      * @returns {void}
      */
-    prompt() {
+    async prompt() {
 
         // allows this to be used inside nested functions
         let self = this;
@@ -142,7 +151,7 @@ class Benchmarker {
         });
 
         // continue running the programming asynchronously
-        let manage_file = async function() {
+        let manage_file = async function () {
             // assign the benchmark folder by conjoining the benchmark results root directory with the language name
             self.benchmark_folder = self.benchmark_results_directory + '/' + self.benchmark_language + "/";
 
@@ -153,11 +162,16 @@ class Benchmarker {
             // close the readline interface
             rl.close();
 
-            // create the file where the benchmark results will be saved to
-            self.fm.createFile();
+            let maxRuns = self.TEST_REPETITIONS
+            for (let run = 1; run <= maxRuns; run++) {
+                console.log(`Repetition ${run}/${maxRuns}`)
 
-            // benchmark the rest of the program
-            await self.run_program();
+                // create the file where the benchmark results will be saved to
+                await self.fm.createFile(run);
+
+                // benchmark the rest of the program
+                await self.run_program();
+            }
         };
 
         if(this.benchmark_language === undefined){
@@ -165,12 +179,11 @@ class Benchmarker {
             rl.question('Language: ', async (benchmark_language) => {
 
                 self.benchmark_language = benchmark_language;
-                manage_file();
+                await manage_file();
             });
         }else{
-            manage_file();
+            await manage_file();
         }
-
     }
 
     /**
@@ -179,11 +192,16 @@ class Benchmarker {
      * @return {Promise<void>}
      */
     async run_program() {
+        // reset
+        this.connection_obj.connection_time = 0;
+        this.connection_obj.times = [];
+        this.connection_obj.clients = [];
 
         // for the number of given rounds, perform the benchmarking process, waiting for each round to finish before
         // continuing
         for (let i = 0; i < this.ROUNDS; i++) {
-            console.log("\nTest: " + (i + 1) + "/" + this.ROUNDS);
+            console.log(`Round ${i + 1}/${this.ROUNDS}`)
+
             await this.benchmark(i);
         }
 
@@ -199,36 +217,41 @@ class Benchmarker {
     async benchmark(round) {
         return new Promise(async (resolve, reject) => {
             try {
-
-                // determine the total number of expected connections
-                // REQUEST_INTERVAL * ROUND_NUMBER
-                this.connection_progress_obj.total = (round + 1) * this.benchmark_obj.connection_interval;
-
                 // start the connection progress bar
-                let connection_bar = new ProgressBar(this.connection_progress_obj);
-                connection_bar.start();
+                // if (this.connection_bar) {
+                //     this.connection_bar.stop();
+                // }
+                // this.connection_bar = new ProgressBar(this.connection_progress_obj);
+                // this.connection_bar.clear();
+                // // determine the total number of expected connections
+                // // REQUEST_INTERVAL * ROUND_NUMBER
+                // this.connection_bar.setTotal((round + 1) * this.benchmark_obj.connection_interval);
+                // this.connection_bar.start();
 
                 // begin the connection process, and wait for it to finish
                 await this.cm.createConnections(round);
 
                 // finalize the progress bar, and stop it from updating any further
-                this.connection_progress_obj.bar.update(this.connection_progress_obj.counter);
-                connection_bar.stop();
+                // this.connection_progress_obj.bar.update(this.connection_progress_obj.counter);
+                // this.connection_bar.stop();
 
                 // output to the conole the time elapse for the new connections to connect
-                console.log("\nConnection Time: " + this.connection_obj.connection_time);
+                console.log("Connection time: " + this.connection_obj.connection_time + " ms");
 
                 // start the benchmarking progress bar
-                this.benchmark_progress_obj.total = this.benchmark_obj.request_interval * this.connection_obj.clients.length;
-                let benchmark_bar = new ProgressBar(this.benchmark_progress_obj);
-                benchmark_bar.clear();
-                benchmark_bar.start();
+                // if (this.benchmark_bar) {
+                //     this.benchmark_bar.stop();
+                // }
+                // this.benchmark_bar = new ProgressBar(this.benchmark_progress_obj);
+                // this.benchmark_bar.clear();
+                // this.benchmark_bar.setTotal(this.benchmark_obj.request_interval * this.connection_obj.clients.length);
+                // this.benchmark_bar.start();
 
                 // start the benchmarking process, and wait for it to finish
                 await this.cm.sendRequests(round);
 
                 // stop the progress bar from updating any further
-                benchmark_bar.stop();
+                // this.benchmark_bar.stop();
 
                 // calculate the results for the current round of benchmarking
                 await this.result.calculate(this.connection_obj);
@@ -258,8 +281,8 @@ class Benchmarker {
 
             // terminate the program is the connection is unsuccessful
             client.on('connectFailed', function (error) {
-                console.log("Server Not Found");
-                process.exit();
+                console.log("Server not found at " + url);
+                reject();
             });
 
             // resolve on a successful connection
@@ -274,4 +297,4 @@ class Benchmarker {
 
 let benchmarker = new Benchmarker();
 let check_server = async function(){await benchmarker.serverCheck()};
-check_server().then( () => { benchmarker.prompt(); });
+check_server().then(() => { benchmarker.prompt().then(() => { process.exit(); }); }).catch(e => {});

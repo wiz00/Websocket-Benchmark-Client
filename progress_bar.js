@@ -37,6 +37,13 @@ module.exports = class ProgressBar {
     }
 
     /**
+     * @returns void
+     */
+    setTotal(total){
+        this.progress_obj.total = total;
+    }
+
+    /**
      * Initializes the progress bar and displays it to the console
      * @returns void
      */

@@ -68,27 +68,36 @@ module.exports = class FileManager {
      *
      * @returns {Promise<void>}
      */
-    async createFile() {
-
-        // retrieve the name of the last file in the directory
-        await this.getLastFile().then((file) => {
-            let found;
-
-            // set default file numbers in case the last file has an invalid name
-            if (file === undefined) {
-                found = [0, 0, 0];
-            } else {
-
-                // grab the benchmark numbers of the previous filename
-                const regex = /(?<test>\d)_(?<run>\d).csv/;
-                found = file.match(regex);
+    createFile(repetitionNumber = 1) {
+        return new Promise((resolve, reject) => {
+            if (typeof this.test_number !== 'undefined') {
+                this.save_file = this.benchmark_folder + String(this.test_number).padStart(3, '0') + "_" + repetitionNumber + ".csv";
+                resolve();
+                return;
             }
+            // retrieve the name of the last file in the directory
+            this.getLastFile().then((file) => {
+                let found;
 
-            // create a new file indicating it is a benchmark test succeeding the previous file
-            const run_count = 1;
-            this.save_file = this.benchmark_folder + (parseInt(found[1]) + 1).toString() + "_" + run_count + ".csv";
+                // set default file numbers in case the last file has an invalid name
+                if (file === undefined) {
+                    found = [null, 0, 0];
+                } else {
 
+                    // grab the benchmark numbers of the previous filename
+                    const regex = /(?<test>\d+)_(?<run>\d+).csv/;
+                    found = file.match(regex);
+                }
+
+                this.test_number = parseInt(found[1]) + 1;
+
+                // create a new file indicating it is a benchmark test succeeding the previous file
+                this.save_file = this.benchmark_folder + String(this.test_number).padStart(3, '0') + "_" + repetitionNumber + ".csv";
+
+                resolve();
+            });
         });
+
     }
 
     /**
@@ -98,12 +107,15 @@ module.exports = class FileManager {
      *
      * @returns {Promise} resolves when done
      */
-    saveDataToFile(data) {
+    saveDataToFile(data, filename = null) {
+        if (filename === null) {
+            filename = this.save_file
+        }
 
-        var newLine = '\r\n';
+        const newLine = '\n';
 
-        // get the column headings
-        let fields = Object.keys(data) + newLine;
+        // create a CSV string from the data object
+        const csv = Object.keys(data).map(function(k){return data[k]}).join(",") + newLine;
 
         return new Promise((resolve, reject) => {
 
@@ -111,32 +123,29 @@ module.exports = class FileManager {
             let self = this;
 
             // grab the predetermined file
-            fs.stat(this.save_file, function (err, stat) {
-
-                // if the file is retrieved without an error, append the data to the file
+            fs.stat(filename, function (err, stat) {
                 if (err == null) {
-
-                    // create a CSV string from the data object
-                    const csv = Object.keys(data).map(function(k){return data[k]}).join(",") + newLine;
+                    // if the file is retrieved without an error, append the data to the file
 
                     // append string to the file
-                    fs.appendFile(self.save_file, csv, function (err) {
+                    fs.appendFile(filename, csv, function (err) {
                         if (err) throw reject();
-                    });
 
-                // if the file is not found, create the file with the column headings
+                        // resolve when done
+                        resolve();
+                    });
                 } else {
+                    // if the file is not found, create the file with the column headings
 
-                    fs.writeFile(self.save_file, fields, function (err) {
+                    // get the column headings
+                    const fields = Object.keys(data) + newLine;
+
+                    fs.writeFile(filename, fields + csv, function (err) {
                         if (err) throw reject();
+
+                        resolve();
                     });
-
-                    // recall self so that the data can be saved to the file after the column headings have be added
-                    self.saveDataToFile(data);
                 }
-
-                // resolve when done
-                resolve();
             });
         });
     }
