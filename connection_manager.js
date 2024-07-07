@@ -150,5 +150,7 @@ module.exports = class ConnectionManager {
         for (let i = 0; i < this.connection_obj.clients.length; i++) {
             this.connection_obj.clients[i].close();
         }
+
+        this.connected = new Array(this.benchmark_obj.connection_interval);
     }
 };

@@ -249,7 +249,7 @@ class Benchmarker {
                 // this.connection_progress_obj.bar.update(this.connection_progress_obj.counter);
                 // this.connection_bar.stop();
 
-                // output to the conole the time elapse for the new connections to connect
+                // output to the console the time elapse for the new connections to connect
                 console.log("Connection time: " + this.connection_obj.connection_time + " ms");
 
                 // start the benchmarking progress bar
