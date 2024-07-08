@@ -15,7 +15,7 @@ TEST_REPETITIONS=${TEST_REPETITIONS:-1}
 read -p "Enter the number of rounds per repetition [50]: " ROUNDS
 ROUNDS=${ROUNDS:-50}
 
-read -p "How many connection to be added per round? [100]: " ADD_CONNECTIONS
+read -p "How many connections to be added per round? [100]: " ADD_CONNECTIONS
 ADD_CONNECTIONS=${ADD_CONNECTIONS:-100}
 
 read -p "How many requests each connection makes per round? [100]: " REQUESTS
